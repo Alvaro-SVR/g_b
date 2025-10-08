@@ -81,3 +81,39 @@ def H_transmon_offset(r_array, n_limits, E_limits, trunc_num, eigs_num):
     plt.tight_layout()
     plt.show()
 
+def H_transmon_carga(r_array, n_array, trunc_num, estados_num):
+    '''
+    r_array: Lista de razones E_J/E_C 
+    n_array: Lista de offsets de carga
+    trunc_num: Truncamiento centrado en 0
+    estados_num: Número de estados a graficar
+    '''
+    
+    fig_num = len(r_array)
+    carga_array = np.arange(-trunc_num, trunc_num + 1)
+    arreglo_evec = np.zeros((fig_num, estados_num, 2 * trunc_num + 1))
+
+    evectors = [H_transmon(r, n, trunc_num, estados_num)[1].T
+                  for r, n in zip(r_array, n_array)]
+    arreglo_evec = np.stack(evectors, axis=0)
+
+
+    _, axes = plt.subplots(1, fig_num, figsize=(5 * fig_num, 5))
+
+    for i, ax in enumerate(axes):
+        for j in range(estados_num):
+            ax.bar(carga_array, arreglo_evec[i, j, :],
+                   width=0.6 if j == 0 else 0.4,
+                   color="black" if j == 0 else "red",
+                   label=r"$|g\rangle$" if j == 0 else r"$|e\rangle$")
+
+        ax.set_title(f"$E_J/E_C = {r_array[i]}$, $n_g={n_array[i]}$")
+        ax.set_xlabel("N")
+        ax.set_xlim(-trunc_num - 0.2, trunc_num + 0.2)
+        ax.set_ylim(-1.2, 1.2)
+        ax.grid(True)
+        ax.legend()
+
+    axes[0].set_ylabel(r"$\psi(N)$")
+    plt.tight_layout()
+    plt.show()

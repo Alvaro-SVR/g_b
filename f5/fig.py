@@ -3,51 +3,81 @@ from scipy.sparse import diags
 from scipy.sparse.linalg import eigsh
 import matplotlib.pyplot as plt
 
-def H_island_eval(r_array, Nmax):
-    num_points=200
-    num_eigs=4
-    dim = 2*Nmax + 1
-    n_vals = np.arange(-Nmax, Nmax+1)
+'''
+En mis intentos de continuar con el código,
+dejé pasar un dia y olvidé todo, así que mejor 
+hago todo desde 0, a ver si mejoro elñ orden.
+'''
 
-    n_ext_array = np.linspace(-1.0, 1.0, num_points)
-    eigenvalues = np.zeros((num_points, len(r_array), num_eigs))
+def H_transmon(r, n, m, eig_num=1):
+    '''
+    r: Es la razón E_J/E_C.
+    n: Es el valor del offset de carga.
+    m: Es el truncamiento centrado en 0.
+    eig_num: Es el numero de autovalores requerido.
 
-    diag_all = 4 * (n_vals[np.newaxis, :] - n_ext_array[:, np.newaxis])**2
+    La función H_base devuelve los autovalores,
+    autovectores, y la lista de -m a m usada para la matriz.
+    '''
 
-    for j, r in enumerate(r_array):
-        sdiag = -r/2 * np.ones(dim-1)
+    m_diag = np.arange(-m, m+1)
+    dim = len(m_diag)
+    
+    diag_pri = 4*(n - m_diag)**2
+    diag_sec = -0.5*r*np.ones(dim - 1)
 
-        for i, diag in enumerate(diag_all):
-            H = diags(
-                diagonals=[diag, sdiag, sdiag],
-                offsets=[0, 1, -1],
-                format="csr"
-            )
-            E = eigsh(H, k=num_eigs, which="SA", return_eigenvectors=False)
-            eigenvalues[i, j, :] = np.sort(E)
+    H = diags(
+        diagonals=[diag_pri, diag_sec, diag_sec],
+        offsets=[0, -1, 1],
+        format="csr"
+    )
 
-    return eigenvalues, n_ext_array
+    E, V = eigsh(H, k=eig_num, which="SA", return_eigenvectors=True)
 
+    idx = np.argsort(E)
+    E = E[idx]
+    V = V[:, idx]
 
+    return E, V, m_diag
 
-def plot_H_island(r_array, Nmax, ymin_list, ymax_list):
-    eigenvalues, n_ext_array = H_island_eval(r_array, Nmax)
+def H_transmon_offset(r_array, n_limits, E_limits, trunc_num, eigs_num):
+    '''
+    r_array: Es la lista de r asociados a cada figura, su longitud es el número de gráficas.
+    n_limits: Es el intervalo de los valores que tomará el offset, tomará 100 puntos por cada unidad.
+    E_limits: Es el intervalo en el eje 'y' que mostrará por cada gráfica.
+    trunc_num: Es el número de truncamiento centrado en 0.
+    eigs_num: Es el número de autovalores que mostrará en la gráfica.
 
-    num_r = len(r_array)
-    num_eigs = eigenvalues.shape[2]
+    La función H_transmon_offset graficará los autovalores de H_transmon para distintos valores del offset.
+    '''
 
-    _, axs = plt.subplots(1, num_r, figsize=(5*num_r, 4), sharey=False)
+    fig_num = len(r_array)
+    intervalo = np.linspace(n_limits[0], 
+                            n_limits[1], 
+                            int(100*(n_limits[1] - n_limits[0])) + 1)
+    '''
+    Donde 'intervalo' son los valores que tomará n en las figuras.
+    '''
 
-    for j, (ax, r, ymin, ymax) in enumerate(zip(axs, r_array, ymin_list, ymax_list)):
-        for k in range(num_eigs):
-            ax.plot(n_ext_array, eigenvalues[:, j, k]/r, label=f"$E_{k}$")
+    arreglo_eig = np.zeros((fig_num, eigs_num, len(intervalo)))
 
-        ax.set_xlabel(r"$N_{ext}$")
-        ax.set_ylabel(r"$E/E_J$")
-        ax.set_title(f"$E_J/E_C = {r}$")
+    for i, r in enumerate(r_array):
+        eigenvalues = np.array([H_transmon(r,n,trunc_num,eigs_num)[0] for n in intervalo])
+        arreglo_eig[i, :eigs_num, :] = eigenvalues.T
+
+    _, axes = plt.subplots(1, fig_num, figsize = (5*fig_num,5))
+
+    for i, ax in enumerate(axes):
+        for j in range(eigs_num):
+            ax.plot(intervalo, arreglo_eig[i,j,:]/r_array[i], label=f'E_{j}')
+
+        ax.set_xlabel('n (offset de carga)')
+        ax.set_ylabel(r'E/E_{J}')
+        ax.set_title(f'ratio = {r_array[i]}')
+        ax.legend()
+        ax.set_ylim(E_limits[i])
         ax.grid(True)
-        #ax.legend()
-        ax.set_ylim(ymin, ymax)
 
     plt.tight_layout()
     plt.show()
+

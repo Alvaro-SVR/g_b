@@ -6,7 +6,14 @@ import matplotlib.pyplot as plt
 '''
 En mis intentos de continuar con el código,
 dejé pasar un dia y olvidé todo, así que mejor 
-hago todo desde 0, a ver si mejoro elñ orden.
+hago todo desde 0, a ver si mejoro el orden.
+
+Despues de considerarlo, por las necesidades de las graficas, no me conviene
+crear una función que devuelva autovalores y autovectores con entradas array.
+Por ello solo lo vectorizo en su interior. SI deseara hacer uno que reciba
+arrays, en las figuras (a)-(c) deberia ingresar para un vector de 200 valores
+identicos a la razon r, lo cual preservaria la consistencia con la generacion
+elemento (r) a elemento (n).
 '''
 
 def H_transmon(r, n, m, eig_num=1):
@@ -48,7 +55,7 @@ def H_transmon_offset(r_array, n_limits, E_limits, trunc_num, eigs_num):
     trunc_num: Es el número de truncamiento centrado en 0.
     eigs_num: Es el número de autovalores que mostrará en la gráfica.
 
-    La función H_transmon_offset graficará los autovalores de H_transmon para distintos valores del offset.
+    Grafica los autovalores de H_transmon para distintos valores del offset.
     '''
 
     fig_num = len(r_array)
@@ -65,6 +72,7 @@ def H_transmon_offset(r_array, n_limits, E_limits, trunc_num, eigs_num):
         eigenvalues = np.array([H_transmon(r,n,trunc_num,eigs_num)[0] for n in intervalo])
         arreglo_eig[i, :eigs_num, :] = eigenvalues.T
 
+    # --- Graficar ---
     _, axes = plt.subplots(1, fig_num, figsize = (5*fig_num,5))
 
     for i, ax in enumerate(axes):
@@ -87,6 +95,8 @@ def H_transmon_carga(r_array, n_array, trunc_num, estados_num):
     n_array: Lista de offsets de carga
     trunc_num: Truncamiento centrado en 0
     estados_num: Número de estados a graficar
+
+
     '''
     
     fig_num = len(r_array)
@@ -98,6 +108,7 @@ def H_transmon_carga(r_array, n_array, trunc_num, estados_num):
     arreglo_evec = np.stack(evectors, axis=0)
 
 
+    # --- Graficar ---
     _, axes = plt.subplots(1, fig_num, figsize=(5 * fig_num, 5))
 
     for i, ax in enumerate(axes):
@@ -115,5 +126,45 @@ def H_transmon_carga(r_array, n_array, trunc_num, estados_num):
         ax.legend()
 
     axes[0].set_ylabel(r"$\psi(N)$")
+    plt.tight_layout()
+    plt.show()
+
+
+def H_transmon_phi(r_array, n_array, trunc_num, estados_num):
+    '''
+    r_array: Lista de razones E_J/E_C 
+    n_array: Lista de offsets de carga
+    trunc_num: Truncamiento centrado en 0
+    estados_num: Número de estados a graficar
+    '''
+
+    fig_num = len(r_array)
+    phi = np.linspace(-np.pi, np.pi, 400)
+    n_vals = np.arange(-trunc_num, trunc_num + 1)
+
+    arreglo_phi = np.zeros((fig_num, estados_num, len(phi)))
+
+    for i, (r, n) in enumerate(zip(r_array, n_array)):
+        _, evec, _ = H_transmon(r, n, trunc_num, eig_num=estados_num)
+
+        exp_factor = np.exp(1j * np.outer(n_vals, phi))
+        psi = evec.T @ exp_factor / np.sqrt(2 * np.pi) 
+        arreglo_phi[i, :, :] = np.abs(psi)**2
+
+    # --- Graficar ---
+    _, axes = plt.subplots(1, fig_num, figsize=(5 * fig_num, 5), sharey=True)
+    if fig_num == 1:
+        axes = [axes]
+
+    for i, ax in enumerate(axes):
+        ax.plot(phi, arreglo_phi[i, 0, :], color="black", label=r"$|g\rangle$")
+        ax.plot(phi, arreglo_phi[i, 1, :], color="red", label=r"$|e\rangle$")
+        ax.set_title(f"$E_J/E_C = {r_array[i]}$, $n_g = {n_array[i]}$")
+        ax.set_xlabel(r"$\varphi$")
+        ax.set_xlim(-np.pi, np.pi)
+        ax.grid(True)
+        ax.legend()
+
+    axes[0].set_ylabel(r"$|\psi(\varphi)|^2$")
     plt.tight_layout()
     plt.show()

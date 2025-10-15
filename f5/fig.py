@@ -168,3 +168,73 @@ def H_transmon_phi(r_array, n_array, trunc_num, estados_num):
     axes[0].set_ylabel(r"$|\psi(\varphi)|^2$")
     plt.tight_layout()
     plt.show()
+
+from scipy.special import genlaguerre
+import math as mt
+
+def H_fluxonio(r1, r2, r_phi, dim, n_ext = 0):
+    '''
+    r1: razon E_J/E_L
+    r2: razon E_J/E_C
+    r_phi: razon Phi/Phi_0
+    dim: la dimension de la matriz, trunca los estados a dim
+    n_ext: offset de carga
+    '''
+
+    E_L = 1/r1
+    E_C = 1/r2
+    N_c = (r2/(2*r1))**(1/4)
+    P_c = (32*r1/r2)**(1/4)
+    p_ext = 2*np.pi*r_phi
+
+    H = np.zeros((dim, dim), dtype=complex)
+
+    for m in range(dim):
+        for n in range(m+1):
+            d = m - n
+            H[m,n] += (-1/2)*(np.exp(-1j*(P_c**2)/2) 
+                              * (1j*P_c)**d 
+                              * np.sqrt(mt.factorial(n)/mt.factorial(m))
+                              * genlaguerre(n, d)(P_c**2)
+                              * (np.exp(-1j*p_ext) + (-1)**d * np.exp(1j*p_ext)))
+            if(m == n):
+                H[m,n] += 4*(2*n+1)*E_C*N_c**2 + 4*E_C*n_ext**2 + 0.5*(2*n+1)*E_L*P_c**2
+            elif(m == n+1):
+                H[m,n] += np.sqrt(n+1) * (1j*8*E_C*N_c*n_ext)
+            elif(m == n+2):
+                H[m,n] += np.sqrt((n+1)*(n+2)) * (-4*E_C*N_c**2 + 0.5*E_L*P_c**2)
+
+            if(m != n):
+                H[n,m] = H[m,n].conjugate()
+
+    return H
+
+def H_fluxiono_phi(r1, r2, dim, n_ext=0):
+    '''
+    r1: razon E_J/E_L
+    r2: razon E_J/E_C
+    dim: la dimension de la matriz, trunca los estados a dim
+    n_ext: offset de carga
+    '''
+
+    x = np.linspace(-1, 1, 200)
+    autovalores = np.zeros((5, len(x)))
+
+    for i, r_phi in enumerate(x):
+        H = H_fluxonio(r1, r2, r_phi, dim, n_ext)
+        eigvals, _ = np.linalg.eigh(H)
+        autovalores[:, i] = np.sort(eigvals.real)[:5]
+
+    plt.figure(figsize=(8, 6))
+    for n in range(5):
+        plt.plot(x, autovalores[n])
+    plt.xlabel(r'$\Phi/\Phi_0$')
+    plt.ylabel(r'$E/E_J$')
+    plt.title(fr'$E_J/E_L = {r1:.1f},\; E_J/E_C = {r2:.1f}$')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+    
+            

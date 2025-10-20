@@ -183,8 +183,8 @@ def H_fluxonio(r1, r2, r_phi, dim, n_ext = 0):
 
     E_L = 1/r1
     E_C = 1/r2
-    N_c = (r2/(2*r1))**(1/4)
-    P_c = (32*r1/r2)**(1/4)
+    N_c = (E_L/(2*E_C))**(0.25)
+    P_c = (32*E_C/E_L)**(0.25)
     p_ext = 2*np.pi*r_phi
 
     H = np.zeros((dim, dim), dtype=complex)

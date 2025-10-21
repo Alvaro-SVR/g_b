@@ -236,5 +236,26 @@ def H_fluxiono_phi(r1, r2, dim, n_ext=0):
     plt.show()
 
 
+def fig_6(EJ, EC, EL, dim, n_eig=5):
+    phi_norm = np.linspace(-1, 1, 200)
+    phi_ext_range = 2 * np.pi * phi_norm
     
+    energias = []
+    
+    for phi_ext in phi_ext_range:
+        flux = clases.Fluxonium(EJ, EC, EL, phi_ext, dim, n_eig=n_eig)
+        eigvals = flux.eig[0]
+        energias.append(eigvals / EJ)
+    
+    energias = np.array(energias)
+
+    plt.figure(figsize=(6, 6))
+    for i in range(n_eig):
+        plt.plot(phi_norm, energias[:, i], label=f'Nivel {i}')
+    
+    plt.xlabel(r'$\phi_{ext} / \phi_0$')
+    plt.ylabel('$E / E_J$')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
             

@@ -44,7 +44,7 @@ class Fluxonium:
         Par (autovalores, autovectores) ordenados por energía creciente.
     """
 
-    def __init__(self, EJ: float, EC: float, EL: float, phi_ext: float, dim: int = 30, n_eig: int = 5):
+    def __init__(self, EJ: float, EC: float, EL: float, phi_ext: float, dim: int = 50, n_eig: int = 5):
         self.EJ = EJ
         self.EC = EC
         self.EL = EL

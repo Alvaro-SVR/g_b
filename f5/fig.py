@@ -2,6 +2,7 @@ import numpy as np
 from scipy.sparse import diags
 from scipy.sparse.linalg import eigsh
 import matplotlib.pyplot as plt
+import clases
 
 '''
 En mis intentos de continuar con el código,

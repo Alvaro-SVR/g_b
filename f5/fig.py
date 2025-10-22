@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse import diags
 from scipy.sparse.linalg import eigsh
 import matplotlib.pyplot as plt
-import clases
+import fluxonium
 
 '''
 En mis intentos de continuar con el código,
@@ -244,7 +244,7 @@ def fig_6(EJ, EC, EL, dim, n_eig=5):
     energias = []
     
     for phi_ext in phi_ext_range:
-        flux = clases.Fluxonium(EJ, EC, EL, phi_ext, dim, n_eig=n_eig)
+        flux = fluxonium.Fluxonium(EJ, EC, EL, phi_ext, dim, n_eig=n_eig)
         eigvals = flux.eig[0]
         energias.append(eigvals / EJ)
     

@@ -1,13 +1,10 @@
 import numpy as np
 import scqubits as scq
 import matplotlib.pyplot as plt
+import os
 
 class TransmonMap:
-    """
-    Calcula los elementos de matriz entre g y e para los operadores N y cos(phi)
-    para rangos de ng y EJ/EC.
-    """
-
+    
     def __init__(self, EC, ncut, ng_values, ratio_values):
         self.EC = EC
         self.ncut = ncut
@@ -20,7 +17,6 @@ class TransmonMap:
             "extrema": {}
         }
 
-    # Calcula los mapas
     def compute_maps(self):
         N_ng, N_r = len(self.ng_values), len(self.ratio_values)
 
@@ -46,7 +42,6 @@ class TransmonMap:
             "cos_max_ratio": self._find_extrema(cos_map, mode="max"),
         }
 
-    # Matriz con NaN excepto en los mínimos o máximos por columna
     def _find_extrema(self, M, mode):
         if mode == "min":
             target = np.nanmin(M, axis=0, keepdims=True)
@@ -58,7 +53,6 @@ class TransmonMap:
         out[mask] = M[mask]
         return out
     
-    # Devuelve el mínimo o máximo global, con ng y ratio asociados
     def get_global_extremum(self, key="N_map", mode="min"):
         M = self.data[key]
         base = key.split("_")[0]
@@ -87,9 +81,8 @@ class TransmonMap:
             "indices": (i, j)
         }
 
-
-    # Grafica el mapa de calor con los extremos
-    def plot_map(self, key="N_map", show_extrema=True):
+    def plot_map(self, key="N_map", show_extrema=True, save=False, filename=None):
+        
         M = self.data[key]
 
         plt.figure(figsize=(7,6))
@@ -106,9 +99,19 @@ class TransmonMap:
         if show_extrema:
             self._plot_extrema(key)
 
-        plt.show()
+        if save:
+            cwd = os.getcwd()
+            output_dir = os.path.join(cwd, "tr")
+            os.makedirs(output_dir, exist_ok=True)
+            
+            if filename is None:
+                filename = f"transmon_{key}_extrema.png" if show_extrema else f"transmon_{key}.png"
+            
+            save_path = os.path.join(output_dir, filename)
+            plt.savefig(save_path, dpi=150, bbox_inches='tight')
 
-    # Solo grafica mínimos y máximos con fondo blanco
+        plt.close()
+
     def _plot_extrema(self, key="N_map"):
         base = key.split("_")[0]
         ext = self.data["extrema"]
@@ -116,13 +119,11 @@ class TransmonMap:
         xs_grid = np.repeat(self.ratio_values[np.newaxis, :], len(self.ng_values), axis=0)
         ys_grid = np.repeat(self.ng_values[:, np.newaxis], len(self.ratio_values), axis=1)
 
-        # lima = mínimos
         Emin = ext[f"{base}_min_ratio"]
         mask = ~np.isnan(Emin)
         if np.any(mask):
             plt.scatter(xs_grid[mask], ys_grid[mask], s=10, color="lime", label="min")
 
-        # rojo = máximos
         Emax = ext[f"{base}_max_ratio"]
         mask = ~np.isnan(Emax)
         if np.any(mask):
@@ -130,12 +131,24 @@ class TransmonMap:
 
         plt.legend(loc="upper right")
 
-    # Corte a ratio fijo
-    def plot_cut_ratio(self, R_index, key="N_map"):
+    def plot_cut_ratio(self, R_index, key="N_map", save=False, filename=None):
+       
         M = self.data[key]
         plt.figure(figsize=(6,4))
         plt.plot(self.ng_values, M[:, R_index])
         plt.xlabel("ng")
         plt.ylabel(key)
         plt.grid(True)
-        plt.show()
+        
+        if save:
+            cwd = os.getcwd()
+            output_dir = os.path.join(cwd, "tr")
+            os.makedirs(output_dir, exist_ok=True)
+            
+            if filename is None:
+                filename = f"transmon_{key}_cut_R{R_index}.png"
+            
+            save_path = os.path.join(output_dir, filename)
+            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        
+        plt.close()
